@@ -1,0 +1,126 @@
+#include "Ifx_Types.h"
+#include "IfxCpu.h"
+#include "IfxScuWdt.h"
+#include "IfxStm.h"
+#include "GPT12_Incremental_Encoder.h"
+
+IFX_ALIGN(4) IfxCpu_syncEvent g_cpuSyncEvent = 0;
+
+/* =========================
+ * Encoder setting
+ * =========================
+ * 2048 PPR, 4x decoding -> 8192 counts/rev
+ * 네 설정이 다르면 이 값만 바꾸면 됨
+ */
+#define ENC_COUNTS_PER_REV   8192
+#define SAMPLE_TIME_MS       10
+
+/* =========================
+ * Watch 확인용 변수
+ * ========================= */
+volatile sint32  g_raw  = 0;      /* 현재 raw count */
+volatile sint32  g_diff = 0;      /* 이전 샘플 대비 count 변화량 */
+volatile sint32  g_pos  = 0;      /* 누적 위치 */
+volatile sint32  g_dir  = 0;      /* 1: 정방향, -1: 역방향, 0: 정지 */
+volatile float32 g_rpm  = 0.0f;   /* 계산된 RPM */
+
+static sint32 g_prevRaw = 0;
+static uint32 g_sampleTicks = 0;
+static uint32 g_nextTick = 0;
+
+static void updateEncoderSimple(void)
+{
+    sint32 raw;
+    sint32 diff;
+    float32 sampleTimeSec;
+
+    sampleTimeSec = ((float32)SAMPLE_TIME_MS) / 1000.0f;
+
+    /* GPT12 내부 상태 갱신 */
+    updateGpt12Encoder();
+
+    /* 현재 raw position 읽기 */
+    raw = getGpt12RawPosition();
+    g_raw = raw;
+
+    /* 이전 샘플과의 차이 */
+    diff = raw - g_prevRaw;
+
+    /* wrap-around 보정
+     * raw count가 0 ~ 8191 범위를 순환한다고 가정
+     */
+    if (diff > (ENC_COUNTS_PER_REV / 2))
+    {
+        diff -= ENC_COUNTS_PER_REV;
+    }
+    else if (diff < -(ENC_COUNTS_PER_REV / 2))
+    {
+        diff += ENC_COUNTS_PER_REV;
+    }
+
+    g_diff = diff;
+
+    /* 누적 위치 */
+    g_pos += diff;
+
+    /* 방향 */
+    if (diff > 0)
+    {
+        g_dir = 1;
+    }
+    else if (diff < 0)
+    {
+        g_dir = -1;
+    }
+    else
+    {
+        g_dir = 0;
+    }
+
+    /* RPM 계산
+     * rpm = (diff / counts_per_rev) * (60 / sample_time_sec)
+     */
+    g_rpm = ((float32)diff * 60.0f) / (((float32)ENC_COUNTS_PER_REV) * sampleTimeSec);
+
+    /* 정지 근처에서 노이즈 제거용 데드밴드 */
+    if ((g_rpm > -2.0f) && (g_rpm < 2.0f))
+    {
+        g_rpm = 0.0f;
+    }
+
+    g_prevRaw = raw;
+}
+
+int core0_main(void)
+{
+    IfxCpu_enableInterrupts();
+
+    IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
+    IfxScuWdt_disableSafetyWatchdog(IfxScuWdt_getSafetyWatchdogPassword());
+
+    IfxCpu_emitEvent(&g_cpuSyncEvent);
+    IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
+
+    /* GPT12 엔코더 초기화 */
+    initGpt12Encoder();
+
+    /* 시작 raw 값 확보 */
+    updateGpt12Encoder();
+    g_prevRaw = getGpt12RawPosition();
+    g_raw = g_prevRaw;
+
+    /* 10ms 주기 설정 */
+    g_sampleTicks = IfxStm_getTicksFromMilliseconds(&MODULE_STM0, SAMPLE_TIME_MS);
+    g_nextTick = IfxStm_getLower(&MODULE_STM0) + g_sampleTicks;
+
+    while (1)
+    {
+        if ((sint32)(IfxStm_getLower(&MODULE_STM0) - g_nextTick) >= 0)
+        {
+            g_nextTick += g_sampleTicks;
+            updateEncoderSimple();
+        }
+    }
+
+    return 1;
+}
