@@ -1,0 +1,430 @@
+#include "Ifx_Types.h"
+#include "IfxCpu.h"
+#include "IfxScuWdt.h"
+#include "IfxGtm.h"
+#include "IfxGtm_Tom_Pwm.h"
+#include "IfxGtm_Cmu.h"
+#include "IfxPort.h"
+#include "IfxStm.h"
+#include "GPT12_Incremental_Encoder.h"
+
+IFX_ALIGN(4) IfxCpu_syncEvent g_cpuSyncEvent = 0;
+
+/* =========================
+ * PWM
+ * ========================= */
+IfxGtm_Tom_Pwm_Driver g_pwm;
+IfxGtm_Tom_Pwm_Config g_config;
+
+#define PWM_PERIOD          5000u
+#define TEST_DUTY_PERCENT   100u
+
+/* =========================
+ * Encoder
+ * 2048 PPR × 4배 해상도
+ * ========================= */
+#define ENC_COUNTS_PER_REV  8192
+
+/* 최대 16개 이벤트 + 시작점 1개 */
+#define RPM_BUF_CAPACITY    17
+
+typedef struct
+{
+    sint32 pos;
+    uint32 tick;
+} EncoderEvent;
+
+/* =========================
+ * Watch 변수
+ * ========================= */
+volatile sint32  g_raw  = 0;
+volatile sint32  g_diff = 0;
+volatile sint32  g_pos  = 0;
+volatile sint32  g_dir  = 0;
+
+volatile float32 g_rpm4  = 0.0f;
+volatile float32 g_rpm8  = 0.0f;
+volatile float32 g_rpm12 = 0.0f;
+volatile float32 g_rpm16 = 0.0f;
+
+volatile float32 g_var4  = 0.0f;
+volatile float32 g_var8  = 0.0f;
+volatile float32 g_var12 = 0.0f;
+volatile float32 g_var16 = 0.0f;
+
+volatile uint32 g_varCnt4  = 0;
+volatile uint32 g_varCnt8  = 0;
+volatile uint32 g_varCnt12 = 0;
+volatile uint32 g_varCnt16 = 0;
+
+volatile uint8   g_bestBuffer = 0;
+volatile float32 g_bestRpm    = 0.0f;
+
+/* =========================
+ * 내부 변수
+ * ========================= */
+static EncoderEvent g_eventBuf[RPM_BUF_CAPACITY];
+static uint8  g_bufHead  = 0;
+static uint8  g_bufCount = 0;
+
+static sint32 g_prevRaw = 0;
+
+static float32 g_prevRpm4  = 0.0f;
+static float32 g_prevRpm8  = 0.0f;
+static float32 g_prevRpm12 = 0.0f;
+static float32 g_prevRpm16 = 0.0f;
+
+static boolean g_prevRpm4Valid  = FALSE;
+static boolean g_prevRpm8Valid  = FALSE;
+static boolean g_prevRpm12Valid = FALSE;
+static boolean g_prevRpm16Valid = FALSE;
+
+static float32 g_sumAbsDelta4  = 0.0f;
+static float32 g_sumAbsDelta8  = 0.0f;
+static float32 g_sumAbsDelta12 = 0.0f;
+static float32 g_sumAbsDelta16 = 0.0f;
+
+/* =========================
+ * abs
+ * ========================= */
+static float32 absf_local(float32 x)
+{
+    return (x < 0.0f) ? -x : x;
+}
+
+/* =========================
+ * PWM duty 설정
+ * ========================= */
+void setDuty(uint8 duty_pct)
+{
+    if (duty_pct > 100u)
+    {
+        duty_pct = 100u;
+    }
+
+    g_config.dutyCycle = (PWM_PERIOD * (uint32)duty_pct) / 100u;
+
+    IfxGtm_Tom_Pwm_init(&g_pwm, &g_config);
+    IfxGtm_Tom_Pwm_start(&g_pwm, TRUE);
+}
+
+/* =========================
+ * 링버퍼에 이벤트 저장
+ * ========================= */
+static void pushEncoderEvent(sint32 pos, uint32 tick)
+{
+    g_eventBuf[g_bufHead].pos  = pos;
+    g_eventBuf[g_bufHead].tick = tick;
+
+    g_bufHead++;
+    if (g_bufHead >= RPM_BUF_CAPACITY)
+    {
+        g_bufHead = 0;
+    }
+
+    if (g_bufCount < RPM_BUF_CAPACITY)
+    {
+        g_bufCount++;
+    }
+}
+
+/* =========================
+ * 최근 N개 이벤트 기준 RPM 계산
+ * ========================= */
+static float32 calcRpmFromWindow(uint8 windowSize, boolean *valid)
+{
+    uint8 newestIndex;
+    uint8 oldestIndex;
+    sint32 deltaPos;
+    uint32 deltaTick;
+    float32 deltaTimeSec;
+    float32 stmFreq;
+
+    if (g_bufCount < (uint8)(windowSize + 1u))
+    {
+        *valid = FALSE;
+        return 0.0f;
+    }
+
+    if (g_bufHead == 0u)
+    {
+        newestIndex = RPM_BUF_CAPACITY - 1u;
+    }
+    else
+    {
+        newestIndex = g_bufHead - 1u;
+    }
+
+    oldestIndex = (uint8)((g_bufHead + RPM_BUF_CAPACITY - (windowSize + 1u)) % RPM_BUF_CAPACITY);
+
+    deltaPos  = g_eventBuf[newestIndex].pos  - g_eventBuf[oldestIndex].pos;
+    deltaTick = g_eventBuf[newestIndex].tick - g_eventBuf[oldestIndex].tick;
+
+    if (deltaTick == 0u)
+    {
+        *valid = FALSE;
+        return 0.0f;
+    }
+
+    stmFreq = IfxStm_getFrequency(&MODULE_STM0);
+    deltaTimeSec = ((float32)deltaTick) / stmFreq;
+
+    if (deltaTimeSec <= 0.0f)
+    {
+        *valid = FALSE;
+        return 0.0f;
+    }
+
+    *valid = TRUE;
+
+    return (((float32)deltaPos) * 60.0f) / (((float32)ENC_COUNTS_PER_REV) * deltaTimeSec);
+}
+
+/* =========================
+ * 변동량 계산
+ * ========================= */
+static void updateVariationMetric(float32 currentRpm,
+                                  volatile float32 *rpmOut,
+                                  volatile float32 *varOut,
+                                  float32 *prevRpm,
+                                  boolean *prevValid,
+                                  float32 *sumAbsDelta,
+                                  volatile uint32 *sampleCount)
+{
+    *rpmOut = currentRpm;
+
+    if (*prevValid != FALSE)
+    {
+        *sumAbsDelta += absf_local(currentRpm - *prevRpm);
+        (*sampleCount)++;
+
+        if (*sampleCount > 0u)
+        {
+            *varOut = (*sumAbsDelta) / ((float32)(*sampleCount));
+        }
+    }
+
+    *prevRpm = currentRpm;
+    *prevValid = TRUE;
+}
+
+/* =========================
+ * 최적 버퍼 선택
+ * ========================= */
+static void updateBestBuffer(void)
+{
+    float32 bestVar = 0.0f;
+    uint8 bestBuf = 0u;
+    boolean found = FALSE;
+
+    if (g_varCnt4 > 10u)
+    {
+        bestVar = g_var4;
+        bestBuf = 4u;
+        found = TRUE;
+    }
+
+    if ((g_varCnt8 > 10u) && ((found == FALSE) || (g_var8 < bestVar)))
+    {
+        bestVar = g_var8;
+        bestBuf = 8u;
+        found = TRUE;
+    }
+
+    if ((g_varCnt12 > 10u) && ((found == FALSE) || (g_var12 < bestVar)))
+    {
+        bestVar = g_var12;
+        bestBuf = 12u;
+        found = TRUE;
+    }
+
+    if ((g_varCnt16 > 10u) && ((found == FALSE) || (g_var16 < bestVar)))
+    {
+        bestVar = g_var16;
+        bestBuf = 16u;
+        found = TRUE;
+    }
+
+    g_bestBuffer = bestBuf;
+
+    switch (g_bestBuffer)
+    {
+    case 4u:
+        g_bestRpm = g_rpm4;
+        break;
+    case 8u:
+        g_bestRpm = g_rpm8;
+        break;
+    case 12u:
+        g_bestRpm = g_rpm12;
+        break;
+    case 16u:
+        g_bestRpm = g_rpm16;
+        break;
+    default:
+        g_bestRpm = 0.0f;
+        break;
+    }
+}
+
+/* =========================
+ * 엔코더 업데이트
+ * ========================= */
+static void updateEncoderBufferDecision(void)
+{
+    sint32 raw;
+    sint32 diff;
+    uint32 nowTick;
+
+    boolean valid4  = FALSE;
+    boolean valid8  = FALSE;
+    boolean valid12 = FALSE;
+    boolean valid16 = FALSE;
+
+    float32 rpm4;
+    float32 rpm8;
+    float32 rpm12;
+    float32 rpm16;
+
+    updateGpt12Encoder();
+
+    raw = getGpt12RawPosition();
+    g_raw = raw;
+
+    diff = raw - g_prevRaw;
+
+    if (diff > (ENC_COUNTS_PER_REV / 2))
+    {
+        diff -= ENC_COUNTS_PER_REV;
+    }
+    else if (diff < -(ENC_COUNTS_PER_REV / 2))
+    {
+        diff += ENC_COUNTS_PER_REV;
+    }
+
+    g_diff = diff;
+
+    if (diff > 0)
+    {
+        g_dir = 1;
+    }
+    else if (diff < 0)
+    {
+        g_dir = -1;
+    }
+    else
+    {
+        g_dir = 0;
+    }
+
+    if (diff != 0)
+    {
+        g_pos += diff;
+        nowTick = IfxStm_getLower(&MODULE_STM0);
+
+        pushEncoderEvent(g_pos, nowTick);
+
+        rpm4  = calcRpmFromWindow(4u,  &valid4);
+        rpm8  = calcRpmFromWindow(8u,  &valid8);
+        rpm12 = calcRpmFromWindow(12u, &valid12);
+        rpm16 = calcRpmFromWindow(16u, &valid16);
+
+        if (valid4 != FALSE)
+        {
+            updateVariationMetric(rpm4, &g_rpm4, &g_var4,
+                                  &g_prevRpm4, &g_prevRpm4Valid,
+                                  &g_sumAbsDelta4, &g_varCnt4);
+        }
+
+        if (valid8 != FALSE)
+        {
+            updateVariationMetric(rpm8, &g_rpm8, &g_var8,
+                                  &g_prevRpm8, &g_prevRpm8Valid,
+                                  &g_sumAbsDelta8, &g_varCnt8);
+        }
+
+        if (valid12 != FALSE)
+        {
+            updateVariationMetric(rpm12, &g_rpm12, &g_var12,
+                                  &g_prevRpm12, &g_prevRpm12Valid,
+                                  &g_sumAbsDelta12, &g_varCnt12);
+        }
+
+        if (valid16 != FALSE)
+        {
+            updateVariationMetric(rpm16, &g_rpm16, &g_var16,
+                                  &g_prevRpm16, &g_prevRpm16Valid,
+                                  &g_sumAbsDelta16, &g_varCnt16);
+        }
+
+        updateBestBuffer();
+    }
+
+    g_prevRaw = raw;
+}
+
+/* =========================
+ * main
+ * ========================= */
+int core0_main(void)
+{
+    IfxCpu_enableInterrupts();
+
+    IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
+    IfxScuWdt_disableSafetyWatchdog(IfxScuWdt_getSafetyWatchdogPassword());
+
+    IfxCpu_emitEvent(&g_cpuSyncEvent);
+    IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
+
+    /* 방향 핀 */
+    IfxPort_setPinMode(&MODULE_P00, 0, IfxPort_Mode_outputPushPullGeneral);
+    IfxPort_setPinMode(&MODULE_P00, 1, IfxPort_Mode_outputPushPullGeneral);
+    IfxPort_setPinLow(&MODULE_P00, 0);
+    IfxPort_setPinLow(&MODULE_P00, 1);
+
+    /* GTM 활성화 */
+    IfxGtm_enable(&MODULE_GTM);
+
+    /* CMU 클럭 */
+    IfxGtm_Cmu_setClkFrequency(&MODULE_GTM, IfxGtm_Cmu_Clk_0, 100000000.0f);
+    IfxGtm_Cmu_enableClocks(&MODULE_GTM,
+                            IFXGTM_CMU_CLKEN_CLK0 |
+                            IFXGTM_CMU_CLKEN_FXCLK);
+
+    /* PWM 설정 (P02.0, TOM0 CH8) */
+    IfxGtm_Tom_Pwm_initConfig(&g_config, &MODULE_GTM);
+    g_config.tom                      = IfxGtm_Tom_0;
+    g_config.tomChannel               = IfxGtm_Tom_Ch_8;
+    g_config.period                   = PWM_PERIOD;
+    g_config.dutyCycle                = 0u;
+    g_config.pin.outputPin            = &IfxGtm_TOM0_8_TOUT0_P02_0_OUT;
+    g_config.synchronousUpdateEnabled = TRUE;
+
+    IfxGtm_Tom_Pwm_init(&g_pwm, &g_config);
+    IfxGtm_Tom_Pwm_start(&g_pwm, TRUE);
+
+    /* 정방향 */
+    IfxPort_setPinHigh(&MODULE_P00, 0);
+    IfxPort_setPinLow (&MODULE_P00, 1);
+
+    /* 엔코더 초기화 */
+    initGpt12Encoder();
+
+    updateGpt12Encoder();
+    g_prevRaw = getGpt12RawPosition();
+    g_raw = g_prevRaw;
+    g_pos = 0;
+    g_dir = 0;
+
+    pushEncoderEvent(g_pos, IfxStm_getLower(&MODULE_STM0));
+
+    while (1)
+    {
+        /* while문 안에서 duty 반복 */
+        setDuty(100u);
+
+        updateEncoderBufferDecision();
+    }
+
+    return 1;
+}
