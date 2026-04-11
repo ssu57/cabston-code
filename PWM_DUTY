@@ -1,0 +1,81 @@
+#include "Ifx_Types.h"
+#include "IfxCpu.h"
+#include "IfxScuWdt.h"
+#include "IfxGtm_Tom_Pwm.h"
+#include "IfxGtm_Cmu.h"
+#include "IfxPort.h"
+
+IFX_ALIGN(4) IfxCpu_syncEvent g_cpuSyncEvent = 0;
+
+IfxGtm_Tom_Pwm_Driver g_pwm;
+IfxGtm_Tom_Pwm_Config g_config;
+
+#define PWM_PERIOD  5000u
+
+void delay_ms(uint32 ms)
+{
+    for (volatile uint32 i = 0; i < ms * 5000; i++);
+}
+
+void setDuty(uint8 duty_pct)
+{
+    if (duty_pct > 100u) duty_pct = 100u;
+    g_config.dutyCycle = (PWM_PERIOD * (uint32)duty_pct) / 100u;
+    IfxGtm_Tom_Pwm_init(&g_pwm, &g_config);
+}
+
+void core0_main(void)
+{
+    IfxCpu_enableInterrupts();
+    IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
+    IfxScuWdt_disableSafetyWatchdog(IfxScuWdt_getSafetyWatchdogPassword());
+
+    /* GPIO (IN1: P00.0, IN2: P00.1) */
+    IfxPort_setPinMode(&MODULE_P00, 0, IfxPort_Mode_outputPushPullGeneral);
+    IfxPort_setPinMode(&MODULE_P00, 1, IfxPort_Mode_outputPushPullGeneral);
+    IfxPort_setPinLow(&MODULE_P00, 0);
+    IfxPort_setPinLow(&MODULE_P00, 1);
+
+    /* GTM 활성화 */
+    IfxGtm_enable(&MODULE_GTM);
+
+    /* CMU 클럭 설정 - FXCLK 도 같이 활성화 */
+    IfxGtm_Cmu_setClkFrequency(&MODULE_GTM, IfxGtm_Cmu_Clk_0, 100000000.0f);
+    IfxGtm_Cmu_enableClocks(&MODULE_GTM,
+                             IFXGTM_CMU_CLKEN_CLK0 |
+                             IFXGTM_CMU_CLKEN_FXCLK);  /* ← 이게 빠지면 PWM 출력 안됨 */
+
+    /* PWM 설정 (P02.0, TOM0 CH8) */
+    IfxGtm_Tom_Pwm_initConfig(&g_config, &MODULE_GTM);
+    g_config.tom                      = IfxGtm_Tom_0;
+    g_config.tomChannel               = IfxGtm_Tom_Ch_8;
+    g_config.period                   = PWM_PERIOD;
+    g_config.dutyCycle                = 0u;
+    g_config.pin.outputPin            = &IfxGtm_TOM0_8_TOUT0_P02_0_OUT;
+    g_config.synchronousUpdateEnabled = TRUE;  /* ← 이게 빠지면 듀티 변경이 반영 안됨 */
+
+    IfxGtm_Tom_Pwm_init(&g_pwm, &g_config);
+    IfxGtm_Tom_Pwm_start(&g_pwm, TRUE);
+
+    /* 정방향 (IN1=H, IN2=L) */
+    IfxPort_setPinHigh(&MODULE_P00, 0);
+    IfxPort_setPinLow (&MODULE_P00, 1);
+
+    while (1)
+    {
+        setDuty(25u);   delay_ms(3000);   /* dutyCycle = 1250 */
+        setDuty(50u);   delay_ms(3000);   /* dutyCycle = 2500 */
+        setDuty(75u);   delay_ms(3000);   /* dutyCycle = 3750 */
+        setDuty(100u);  delay_ms(3000);   /* dutyCycle = 5000 */
+
+        /* 정지 2초 */
+        IfxPort_setPinLow(&MODULE_P00, 0);
+        IfxPort_setPinLow(&MODULE_P00, 1);
+        setDuty(0u);
+        delay_ms(2000);
+
+        /* 다시 정방향 */
+        IfxPort_setPinHigh(&MODULE_P00, 0);
+        IfxPort_setPinLow (&MODULE_P00, 1);
+    }
+}
