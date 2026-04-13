@@ -1,81 +1,258 @@
 #include "Ifx_Types.h"
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
-#include "IfxGtm_Tom_Pwm.h"
-#include "IfxGtm_Cmu.h"
 #include "IfxPort.h"
+#include "IfxGtm.h"
+#include "IfxGtm_Cmu.h"
+#include "IfxGtm_Tom_Pwm.h"
 
 IFX_ALIGN(4) IfxCpu_syncEvent g_cpuSyncEvent = 0;
 
-IfxGtm_Tom_Pwm_Driver g_pwm;
-IfxGtm_Tom_Pwm_Config g_config;
+/* =========================
+ * 핀 매핑
+ * =========================
+ * Motor A
+ *   ENA -> P02.0  (PWM, TOM0_CH8)
+ *   IN1 -> P21.3  (GPIO)
+ *   IN2 -> P21.4  (GPIO)
+ *
+ * Motor B
+ *   ENB -> P02.1  (PWM, TOM0_CH9)
+ *   IN3 -> P21.5  (GPIO)
+ *   IN4 -> P22.0  (GPIO)
+ *
+ * Motor C
+ *   ENC -> P10.1  (PWM, TOM0_CH1)
+ *   IN5 -> P22.1  (GPIO)
+ *   IN6 -> P22.2  (GPIO)
+ *
+ * Motor D
+ *   END -> P10.2  (PWM, TOM0_CH2)
+ *   IN7 -> P23.0  (GPIO)
+ *   IN8 -> P23.1  (GPIO)
+ * =========================
+ */
 
-#define PWM_PERIOD  5000u
+#define PWM_PERIOD   5000u
+
+#define IN1_PORT     &MODULE_P21
+#define IN1_PIN      3
+#define IN2_PORT     &MODULE_P21
+#define IN2_PIN      4
+
+#define IN3_PORT     &MODULE_P21
+#define IN3_PIN      5
+#define IN4_PORT     &MODULE_P22
+#define IN4_PIN      0
+
+#define IN5_PORT     &MODULE_P22
+#define IN5_PIN      1
+#define IN6_PORT     &MODULE_P22
+#define IN6_PIN      2
+
+#define IN7_PORT     &MODULE_P23
+#define IN7_PIN      0
+#define IN8_PORT     &MODULE_P23
+#define IN8_PIN      1
+
+IfxGtm_Tom_Pwm_Driver g_pwmA;
+IfxGtm_Tom_Pwm_Driver g_pwmB;
+IfxGtm_Tom_Pwm_Driver g_pwmC;
+IfxGtm_Tom_Pwm_Driver g_pwmD;
+
+IfxGtm_Tom_Pwm_Config g_configA;
+IfxGtm_Tom_Pwm_Config g_configB;
+IfxGtm_Tom_Pwm_Config g_configC;
+IfxGtm_Tom_Pwm_Config g_configD;
 
 void delay_ms(uint32 ms)
 {
-    for (volatile uint32 i = 0; i < ms * 5000; i++);
+    volatile uint32 i;
+    for (i = 0; i < (ms * 5000u); i++) { __nop(); }
 }
 
-void setDuty(uint8 duty_pct)
+void setDutyA(uint8 duty_pct)
 {
     if (duty_pct > 100u) duty_pct = 100u;
-    g_config.dutyCycle = (PWM_PERIOD * (uint32)duty_pct) / 100u;
-    IfxGtm_Tom_Pwm_init(&g_pwm, &g_config);
+    g_configA.dutyCycle = (PWM_PERIOD * (uint32)duty_pct) / 100u;
+    IfxGtm_Tom_Pwm_init(&g_pwmA, &g_configA);
+    IfxGtm_Tom_Pwm_start(&g_pwmA, TRUE);
 }
 
-void core0_main(void)
+void setDutyB(uint8 duty_pct)
+{
+    if (duty_pct > 100u) duty_pct = 100u;
+    g_configB.dutyCycle = (PWM_PERIOD * (uint32)duty_pct) / 100u;
+    IfxGtm_Tom_Pwm_init(&g_pwmB, &g_configB);
+    IfxGtm_Tom_Pwm_start(&g_pwmB, TRUE);
+}
+
+void setDutyC(uint8 duty_pct)
+{
+    if (duty_pct > 100u) duty_pct = 100u;
+    g_configC.dutyCycle = (PWM_PERIOD * (uint32)duty_pct) / 100u;
+    IfxGtm_Tom_Pwm_init(&g_pwmC, &g_configC);
+    IfxGtm_Tom_Pwm_start(&g_pwmC, TRUE);
+}
+
+void setDutyD(uint8 duty_pct)
+{
+    if (duty_pct > 100u) duty_pct = 100u;
+    g_configD.dutyCycle = (PWM_PERIOD * (uint32)duty_pct) / 100u;
+    IfxGtm_Tom_Pwm_init(&g_pwmD, &g_configD);
+    IfxGtm_Tom_Pwm_start(&g_pwmD, TRUE);
+}
+
+void setDutyAll(uint8 duty_pct)
+{
+    setDutyA(duty_pct);
+    setDutyB(duty_pct);
+    setDutyC(duty_pct);
+    setDutyD(duty_pct);
+}
+
+void motorForward(void)
+{
+    IfxPort_setPinHigh(IN1_PORT, IN1_PIN);
+    IfxPort_setPinLow (IN2_PORT, IN2_PIN);
+    IfxPort_setPinHigh(IN3_PORT, IN3_PIN);
+    IfxPort_setPinLow (IN4_PORT, IN4_PIN);
+    IfxPort_setPinHigh(IN5_PORT, IN5_PIN);
+    IfxPort_setPinLow (IN6_PORT, IN6_PIN);
+    IfxPort_setPinHigh(IN7_PORT, IN7_PIN);
+    IfxPort_setPinLow (IN8_PORT, IN8_PIN);
+}
+
+void motorBackward(void)
+{
+    IfxPort_setPinLow (IN1_PORT, IN1_PIN);
+    IfxPort_setPinHigh(IN2_PORT, IN2_PIN);
+    IfxPort_setPinLow (IN3_PORT, IN3_PIN);
+    IfxPort_setPinHigh(IN4_PORT, IN4_PIN);
+    IfxPort_setPinLow (IN5_PORT, IN5_PIN);
+    IfxPort_setPinHigh(IN6_PORT, IN6_PIN);
+    IfxPort_setPinLow (IN7_PORT, IN7_PIN);
+    IfxPort_setPinHigh(IN8_PORT, IN8_PIN);
+}
+
+void motorStop(void)
+{
+    setDutyAll(0u);
+
+    IfxPort_setPinLow(IN1_PORT, IN1_PIN);
+    IfxPort_setPinLow(IN2_PORT, IN2_PIN);
+    IfxPort_setPinLow(IN3_PORT, IN3_PIN);
+    IfxPort_setPinLow(IN4_PORT, IN4_PIN);
+    IfxPort_setPinLow(IN5_PORT, IN5_PIN);
+    IfxPort_setPinLow(IN6_PORT, IN6_PIN);
+    IfxPort_setPinLow(IN7_PORT, IN7_PIN);
+    IfxPort_setPinLow(IN8_PORT, IN8_PIN);
+}
+
+int core0_main(void)
 {
     IfxCpu_enableInterrupts();
     IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
     IfxScuWdt_disableSafetyWatchdog(IfxScuWdt_getSafetyWatchdogPassword());
+    IfxCpu_emitEvent(&g_cpuSyncEvent);
+    IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
 
-    /* GPIO (IN1: P00.0, IN2: P00.1) */
-    IfxPort_setPinMode(&MODULE_P00, 0, IfxPort_Mode_outputPushPullGeneral);
-    IfxPort_setPinMode(&MODULE_P00, 1, IfxPort_Mode_outputPushPullGeneral);
-    IfxPort_setPinLow(&MODULE_P00, 0);
-    IfxPort_setPinLow(&MODULE_P00, 1);
+    IfxPort_setPinModeOutput(IN1_PORT, IN1_PIN, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinModeOutput(IN2_PORT, IN2_PIN, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinModeOutput(IN3_PORT, IN3_PIN, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinModeOutput(IN4_PORT, IN4_PIN, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinModeOutput(IN5_PORT, IN5_PIN, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinModeOutput(IN6_PORT, IN6_PIN, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinModeOutput(IN7_PORT, IN7_PIN, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinModeOutput(IN8_PORT, IN8_PIN, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
 
-    /* GTM 활성화 */
     IfxGtm_enable(&MODULE_GTM);
-
-    /* CMU 클럭 설정 - FXCLK 도 같이 활성화 */
+    IfxGtm_Cmu_setGclkFrequency(&MODULE_GTM, 100000000.0f);
     IfxGtm_Cmu_setClkFrequency(&MODULE_GTM, IfxGtm_Cmu_Clk_0, 100000000.0f);
-    IfxGtm_Cmu_enableClocks(&MODULE_GTM,
-                             IFXGTM_CMU_CLKEN_CLK0 |
-                             IFXGTM_CMU_CLKEN_FXCLK);  /* ← 이게 빠지면 PWM 출력 안됨 */
+    IfxGtm_Cmu_enableClocks(&MODULE_GTM, IFXGTM_CMU_CLKEN_CLK0 | IFXGTM_CMU_CLKEN_FXCLK);
 
-    /* PWM 설정 (P02.0, TOM0 CH8) */
-    IfxGtm_Tom_Pwm_initConfig(&g_config, &MODULE_GTM);
-    g_config.tom                      = IfxGtm_Tom_0;
-    g_config.tomChannel               = IfxGtm_Tom_Ch_8;
-    g_config.period                   = PWM_PERIOD;
-    g_config.dutyCycle                = 0u;
-    g_config.pin.outputPin            = &IfxGtm_TOM0_8_TOUT0_P02_0_OUT;
-    g_config.synchronousUpdateEnabled = TRUE;  /* ← 이게 빠지면 듀티 변경이 반영 안됨 */
+    /* PWM A : P02.0 (TOM0_CH8) */
+    IfxGtm_Tom_Pwm_initConfig(&g_configA, &MODULE_GTM);
+    g_configA.tom                      = IfxGtm_Tom_0;
+    g_configA.tomChannel               = IfxGtm_Tom_Ch_8;
+    g_configA.period                   = PWM_PERIOD;
+    g_configA.dutyCycle                = 0u;
+    g_configA.pin.outputPin            = &IfxGtm_TOM0_8_TOUT0_P02_0_OUT;
+    g_configA.synchronousUpdateEnabled = TRUE;
+    IfxGtm_Tom_Pwm_init(&g_pwmA, &g_configA);
+    IfxGtm_Tom_Pwm_start(&g_pwmA, TRUE);
 
-    IfxGtm_Tom_Pwm_init(&g_pwm, &g_config);
-    IfxGtm_Tom_Pwm_start(&g_pwm, TRUE);
+    /* PWM B : P02.1 (TOM0_CH9) */
+    IfxGtm_Tom_Pwm_initConfig(&g_configB, &MODULE_GTM);
+    g_configB.tom                      = IfxGtm_Tom_0;
+    g_configB.tomChannel               = IfxGtm_Tom_Ch_9;
+    g_configB.period                   = PWM_PERIOD;
+    g_configB.dutyCycle                = 0u;
+    g_configB.pin.outputPin            = &IfxGtm_TOM0_9_TOUT1_P02_1_OUT;
+    g_configB.synchronousUpdateEnabled = TRUE;
+    IfxGtm_Tom_Pwm_init(&g_pwmB, &g_configB);
+    IfxGtm_Tom_Pwm_start(&g_pwmB, TRUE);
 
-    /* 정방향 (IN1=H, IN2=L) */
-    IfxPort_setPinHigh(&MODULE_P00, 0);
-    IfxPort_setPinLow (&MODULE_P00, 1);
+    /* PWM C : P10.1 (TOM0_CH1) */
+    IfxGtm_Tom_Pwm_initConfig(&g_configC, &MODULE_GTM);
+    g_configC.tom                      = IfxGtm_Tom_0;
+    g_configC.tomChannel               = IfxGtm_Tom_Ch_1;
+    g_configC.period                   = PWM_PERIOD;
+    g_configC.dutyCycle                = 0u;
+    g_configC.pin.outputPin            = &IfxGtm_TOM0_1_TOUT103_P10_1_OUT;
+    g_configC.synchronousUpdateEnabled = TRUE;
+    IfxGtm_Tom_Pwm_init(&g_pwmC, &g_configC);
+    IfxGtm_Tom_Pwm_start(&g_pwmC, TRUE);
+
+    /* PWM D : P10.2 (TOM0_CH2) */
+    IfxGtm_Tom_Pwm_initConfig(&g_configD, &MODULE_GTM);
+    g_configD.tom                      = IfxGtm_Tom_0;
+    g_configD.tomChannel               = IfxGtm_Tom_Ch_2;
+    g_configD.period                   = PWM_PERIOD;
+    g_configD.dutyCycle                = 0u;
+    g_configD.pin.outputPin            = &IfxGtm_TOM0_2_TOUT104_P10_2_OUT;
+    g_configD.synchronousUpdateEnabled = TRUE;
+    IfxGtm_Tom_Pwm_init(&g_pwmD, &g_configD);
+    IfxGtm_Tom_Pwm_start(&g_pwmD, TRUE);
 
     while (1)
     {
-        setDuty(25u);   delay_ms(3000);   /* dutyCycle = 1250 */
-        setDuty(50u);   delay_ms(3000);   /* dutyCycle = 2500 */
-        setDuty(75u);   delay_ms(3000);   /* dutyCycle = 3750 */
-        setDuty(100u);  delay_ms(3000);   /* dutyCycle = 5000 */
+        /* 전진 : 25, 50, 75, 100% */
+        motorForward();
+        setDutyAll(25u);
+        delay_ms(3000u);
 
-        /* 정지 2초 */
-        IfxPort_setPinLow(&MODULE_P00, 0);
-        IfxPort_setPinLow(&MODULE_P00, 1);
-        setDuty(0u);
-        delay_ms(2000);
+        setDutyAll(50u);
+        delay_ms(3000u);
 
-        /* 다시 정방향 */
-        IfxPort_setPinHigh(&MODULE_P00, 0);
-        IfxPort_setPinLow (&MODULE_P00, 1);
+        setDutyAll(75u);
+        delay_ms(3000u);
+
+        setDutyAll(100u);
+        delay_ms(3000u);
+
+        /* 정지 */
+        motorStop();
+        delay_ms(2000u);
+
+        /* 후진 : 25, 50, 75, 100% */
+        motorBackward();
+        setDutyAll(25u);
+        delay_ms(3000u);
+
+        setDutyAll(50u);
+        delay_ms(3000u);
+
+        setDutyAll(75u);
+        delay_ms(3000u);
+
+        setDutyAll(100u);
+        delay_ms(3000u);
+
+        /* 정지 */
+        motorStop();
+        delay_ms(2000u);
     }
+
+    return 1;
 }
