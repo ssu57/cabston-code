@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="com.rt.hightec.agent.launcher.launchConfigurationType">
+    <stringAttribute key="ACC_HW" value="DAS JDS AURIX LITE KIT V1.1 LK6PA3CP"/>
+    <booleanAttribute key="ENABLE_AGENTLOG" value="false"/>
+    <booleanAttribute key="ENABLE_FLASHING" value="true"/>
+    <booleanAttribute key="ENABLE_STOPPING" value="true"/>
+    <stringAttribute key="EXECUTABLE_PATH" value="${workspace_loc}/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf"/>
+    <stringAttribute key="STOP_FUNCTION" value="core0_main"/>
+    <stringAttribute key="SVD" value="C:/Infineon/AURIX-Studio-1.10.28/build_system/bundled-artefacts-repo/svd/tc27xdpd/1.1-2/device.svd"/>
+    <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="encoder_TC275_LK"/>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+        <listEntry value="/encoder_TC275_LK"/>
+    </listAttribute>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+        <listEntry value="4"/>
+    </listAttribute>
+    <stringAttribute key="org.eclipse.debug.ui.ATTR_LOCATION" value="/encoder_TC275_LK/encoder_TC275_LK TriCore Debug (TASKING).launch"/>
+    <stringAttribute key="org.eclipse.debug.ui.ATTR_PROJECT_NAME" value="encoder_TC275_LK"/>
+    <booleanAttribute key="org.eclipse.debug.ui.ATTR_SHARED" value="true"/>
+    <stringAttribute key="org.eclipse.tcf.debug.MemoryMap" value="[{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;848bee95-0000-41a0-b0c6-43da71a2794b&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;a61c2f8d-2089-4dba-b0f9-d8d5111ef7d5&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;62312fd8-a60d-4481-99e0-4ba46ad69e4a&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;bfbeeb17-11d3-4554-b4e1-cf98a3ba0bb2&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;d84f2b6d-32f8-42dc-a998-3a031a4c56cf&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;876f9baf-2f62-4f2f-89b7-253fde20e52c&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;02b941d7-804b-45d1-8c7c-f4459afc94b2&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;03fcb850-3e1c-4791-bf67-1de66e0188ef&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 1: CPU1 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;bc495e28-ac6c-4ed9-a077-80189ef7fee9&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;723d43af-1745-492a-9ad7-40782772c1d0&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;03e56053-f54a-413e-a24c-4bed3463f866&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 1: CPU1 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;0795dc99-ec53-4d68-9644-a2a859b82682&quot;}]"/>
+    <stringAttribute key="org.eclipse.tcf.debug.PeerID" value="TCP:127.0.0.1:1534"/>
+    <stringAttribute key="org.eclipse.tcf.debug.ProjectName" value="encoder_TC275_LK"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.RunLocalAgent" value="false"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.RunLocalServer" value="false"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.UseLocalAgent" value="false"/>
+    <stringAttribute key="org.eclipse.tcf.debug.executable_name" value="${workspace_loc}/encoder_TC275_LK/TriCore Debug (TASKING)/encoder_TC275_LK.elf"/>
+    <stringAttribute key="sessionID" value="89ded9bd-16fd-4518-99db-3062eb5f877a"/>
+</launchConfiguration>
