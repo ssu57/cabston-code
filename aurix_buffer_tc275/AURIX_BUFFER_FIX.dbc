@@ -1,0 +1,62 @@
+VERSION ""
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: AURIX CANoe
+
+BO_ 256 PHASE_RPM: 8 AURIX
+ SG_ RAW_PHASE4_TICK100US : 0|16@1+ (1,0) [0|65535] "100us" CANoe
+ SG_ AVG_PHASE4_TICK100US : 16|16@1+ (1,0) [0|65535] "100us" CANoe
+ SG_ RAW_RPM : 32|16@1+ (0.1,0) [0|6553.5] "rpm" CANoe
+ SG_ AVG_RPM : 48|16@1+ (0.1,0) [0|6553.5] "rpm" CANoe
+
+BO_ 257 BUFFER_SCAN: 8 AURIX
+ SG_ ACTIVE_BUFFER_COUNT : 0|8@1+ (1,0) [0|255] "sample" CANoe
+ SG_ BEST_BUFFER_COUNT : 8|8@1+ (1,0) [0|255] "sample" CANoe
+ SG_ RPM_STDDEV : 16|16@1+ (0.1,0) [0|6553.5] "rpm" CANoe
+ SG_ RPM_P2P : 32|16@1+ (0.1,0) [0|6553.5] "rpm" CANoe
+ SG_ DUTY_PERCENT : 48|8@1+ (1,0) [0|100] "%" CANoe
+ SG_ STATE : 56|8@1+ (1,0) [0|255] "" CANoe
+
+CM_ BO_ 256 "0x100: 최신 RPM 샘플 시간, 8개 평균 시간, 최신 RPM, 8개 평균 RPM";
+CM_ BO_ 257 "0x101: 고정 버퍼 크기, 현재 통계값, 듀티, 상태";
+CM_ SG_ 256 RAW_PHASE4_TICK100US "이름은 기존 호환용이며, 실제 값은 최신 RPM 샘플 계산에 사용된 시간차(100us)입니다.";
+CM_ SG_ 256 AVG_PHASE4_TICK100US "이름은 기존 호환용이며, 실제 값은 최근 8개 RPM 샘플 시간차의 평균(100us)입니다.";
+CM_ SG_ 256 RAW_RPM "최신 RPM 샘플 값입니다. 스케일은 0.1 rpm 입니다.";
+CM_ SG_ 256 AVG_RPM "최근 8개 RPM 샘플 평균 값입니다. 스케일은 0.1 rpm 입니다.";
+CM_ SG_ 257 ACTIVE_BUFFER_COUNT "현재 사용하는 고정 링버퍼 길이입니다. 항상 8입니다.";
+CM_ SG_ 257 BEST_BUFFER_COUNT "현재 프로젝트에서는 호환용으로 유지하며 항상 8입니다.";
+CM_ SG_ 257 RPM_STDDEV "현재 듀티 구간에서 누적된 평균 RPM의 표준편차입니다. 스케일은 0.1 rpm 입니다.";
+CM_ SG_ 257 RPM_P2P "현재 듀티 구간에서 누적된 평균 RPM의 피크-투-피크 값입니다. 스케일은 0.1 rpm 입니다.";
+CM_ SG_ 257 DUTY_PERCENT "현재 인가 중인 PWM 듀티(%) 입니다.";
+CM_ SG_ 257 STATE "0=Init, 1=RunSequence, 2=HoldFinal100";
+VAL_ 257 STATE 0 "Init" 1 "RunSequence" 2 "HoldFinal100";
