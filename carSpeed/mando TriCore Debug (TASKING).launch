@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="com.rt.hightec.agent.launcher.launchConfigurationType">
+    <stringAttribute key="ACC_HW" value="DAS JDS AURIX LITE KIT V1.1 LK6PA3CP"/>
+    <booleanAttribute key="ENABLE_AGENTLOG" value="false"/>
+    <booleanAttribute key="ENABLE_FLASHING" value="true"/>
+    <booleanAttribute key="ENABLE_STOPPING" value="true"/>
+    <stringAttribute key="EXECUTABLE_PATH" value="${workspace_loc}/mando/mando/TriCore Debug (TASKING)/mando.elf"/>
+    <stringAttribute key="STOP_FUNCTION" value="core0_main"/>
+    <stringAttribute key="SVD" value="C:/Infineon/AURIX-Studio-1.10.28/build_system/bundled-artefacts-repo/svd/tc27xdpd/1.1-2/device.svd"/>
+    <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="mando"/>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+        <listEntry value="/mando"/>
+    </listAttribute>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+        <listEntry value="4"/>
+    </listAttribute>
+    <stringAttribute key="org.eclipse.debug.ui.ATTR_LOCATION" value="/mando/mando TriCore Debug (TASKING).launch"/>
+    <stringAttribute key="org.eclipse.debug.ui.ATTR_PROJECT_NAME" value="mando"/>
+    <booleanAttribute key="org.eclipse.debug.ui.ATTR_SHARED" value="true"/>
+    <stringAttribute key="org.eclipse.tcf.debug.MemoryMap" value="[{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;57d69478-46a0-4e3b-a6b7-06c78d13d9d9&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;a736af04-6907-4196-8017-b63b78db51d9&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;c83be9f3-ee73-4412-ab47-ae95dbd39f10&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;fef35e70-9b5a-496c-bd75-9395986cf5c6&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;5ce684ac-1f49-4fea-8951-887071da9b8c&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;3e500cc8-e37e-47eb-9808-18d38190653e&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;7c3f0b6b-1ce2-4c0f-8686-a9a93de9ddf4&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;b44c515d-e005-4d61-83f2-36de42af5b6b&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 1: CPU1 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;9ceed587-724d-4c2a-9321-12863cf0b94c&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 2: CPU2 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;c8a6ac5f-5c87-49bb-bd69-77856a70df34&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;7d2a56be-fb36-472d-8f21-a721b2f800f7&quot;},{&quot;FileName&quot;:&quot;C:/AURIX/worksapace/mando/mando/TriCore Debug (TASKING)/mando.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS AURIX LITE KIT V1.1 LK6PA3CP/Core 1: CPU1 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;e126ea17-7347-4d7a-9f8a-3e9e6b661c68&quot;}]"/>
+    <stringAttribute key="org.eclipse.tcf.debug.PeerID" value="TCP:127.0.0.1:1534"/>
+    <stringAttribute key="org.eclipse.tcf.debug.ProjectName" value="mando"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.RunLocalAgent" value="false"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.RunLocalServer" value="false"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.UseLocalAgent" value="false"/>
+    <stringAttribute key="org.eclipse.tcf.debug.executable_name" value="${workspace_loc}/mando/mando/TriCore Debug (TASKING)/mando.elf"/>
+    <stringAttribute key="sessionID" value="c41c28da-f177-43f3-9b91-7ff37890e0ce"/>
+</launchConfiguration>
